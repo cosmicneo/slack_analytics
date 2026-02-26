@@ -1,0 +1,574 @@
+{
+  "datasets": [
+    {
+      "name": "5f6b2cea",
+      "displayName": "conversation_messages",
+      "queryLines": [
+        "WITH t1 AS \r\n",
+        "(SELECT * FROM slack_etl.gold.conversation_messages order by message_count DESC limit 10),\r\n",
+        "\r\n",
+        "t2 AS\r\n",
+        "(SELECT *, max(message_count) OVER() as max_msg,  min(message_count) OVER() as min_msg FROM t1)\r\n",
+        "\r\n",
+        "SELECT *, (message_count-min_msg)/(max_msg-min_msg) as normalized_count FROM t2"
+      ]
+    },
+    {
+      "name": "33bfe0cc",
+      "displayName": "users_location_stats",
+      "queryLines": [
+        "SELECT * FROM slack_etl.gold.users_location_stats"
+      ]
+    },
+    {
+      "name": "b8312d24",
+      "displayName": "messages_reaction_stats",
+      "queryLines": [
+        "SELECT * FROM slack_etl.gold.messages_reaction_stats"
+      ]
+    },
+    {
+      "name": "f8752028",
+      "displayName": "users_department_stats",
+      "queryLines": [
+        "SELECT * FROM slack_etl.gold.users_department_stats"
+      ]
+    },
+    {
+      "name": "a492fa4c",
+      "displayName": "messages_attachment_stats",
+      "queryLines": [
+        "SELECT * FROM slack_etl.gold.messages_attachment_stats"
+      ]
+    },
+    {
+      "name": "5b67458d",
+      "displayName": "conversations_stats",
+      "queryLines": [
+        "SELECT * FROM slack_etl.gold.conversations_stats order by channel_count desc limit 10"
+      ]
+    },
+    {
+      "name": "6066d41b",
+      "displayName": "Users",
+      "queryLines": [
+        "SELECT * FROM slack_etl.silver.users"
+      ]
+    },
+    {
+      "name": "abca589d",
+      "displayName": "Messages By Time",
+      "queryLines": [
+        "WITH t AS (SELECT COUNT(client_msg_id) as msg_count, date_format(CAST(CAST(ts AS DOUBLE) AS timestamp), 'yyyy-mm-dd HH:mm:ss') AS ts_new FROM slack_etl.bronze.messages GROUP BY date_format(CAST(CAST(ts AS DOUBLE) AS timestamp), 'yyyy-mm-dd HH:mm:ss')  ORDER BY ts_new DESC)\r\n",
+        "\r\n",
+        "SELECT *, sum(msg_count) OVER() AS total_msg  FROM t"
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "name": "ebc053b9",
+      "displayName": "slack_overview",
+      "layout": [
+        {
+          "widget": {
+            "name": "channel-messages",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5f6b2cea",
+                  "fields": [
+                    {
+                      "name": "channel_name",
+                      "expression": "`channel_name`"
+                    },
+                    {
+                      "name": "sum(message_count)",
+                      "expression": "SUM(`message_count`)"
+                    },
+                    {
+                      "name": "sum(normalized_count)",
+                      "expression": "SUM(`normalized_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Channels With Highest Message Count"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "channel_name",
+                  "axis": {
+                    "title": "channel",
+                    "hideLabels": true
+                  },
+                  "displayName": "Channels",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(normalized_count)",
+                  "axis": {
+                    "title": "message count"
+                  },
+                  "displayName": "Message Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "channel_name",
+                  "displayName": "Channels",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true,
+                  "text": {
+                    "fieldName": "sum(message_count)",
+                    "displayName": "Message Count"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 8,
+            "width": 12,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "location-distribution",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "33bfe0cc",
+                  "fields": [
+                    {
+                      "name": "sum(count)",
+                      "expression": "SUM(`count`)"
+                    },
+                    {
+                      "name": "location",
+                      "expression": "`location`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "User Location Distribution"
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(count)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "title": "User Location Distribution",
+                    "hideTitle": true
+                  }
+                },
+                "color": {
+                  "fieldName": "location",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 3,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "c1dcf0ca",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "b8312d24",
+                  "fields": [
+                    {
+                      "name": "sum(count)",
+                      "expression": "SUM(`count`)"
+                    },
+                    {
+                      "name": "name",
+                      "expression": "`name`"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "title": "Message Reaction Distribution",
+                "showTitle": true
+              },
+              "widgetType": "pie",
+              "encodings": {
+                "angle": {
+                  "fieldName": "sum(count)",
+                  "scale": {
+                    "type": "quantitative"
+                  },
+                  "axis": {
+                    "hideTitle": true
+                  },
+                  "displayName": "count"
+                },
+                "color": {
+                  "fieldName": "name",
+                  "displayName": "name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": false
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 3,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "9f0b608d",
+            "multilineTextboxSpec": {
+              "lines": [
+                "<span style=\"text-align:center;display:block\"><span style=\"font-size:24px\">**Slack Overview Analysis**</span></span>"
+              ]
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 0,
+            "width": 12,
+            "height": 1
+          }
+        },
+        {
+          "widget": {
+            "name": "member-count-top-10-channels",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5b67458d",
+                  "fields": [
+                    {
+                      "name": "channel_name",
+                      "expression": "`channel_name`"
+                    },
+                    {
+                      "name": "member_count",
+                      "expression": "`member_count`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "frame": {
+                "showTitle": true,
+                "title": "Top 10 Most Populated Channels"
+              },
+              "widgetType": "bar",
+              "encodings": {
+                "x": {
+                  "fieldName": "channel_name",
+                  "axis": {
+                    "hideLabels": true
+                  },
+                  "displayName": "Channel",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "member_count",
+                  "axis": {
+                    "hideLabels": true
+                  },
+                  "displayName": "Member Count",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                },
+                "color": {
+                  "fieldName": "channel_name",
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "label": {
+                  "show": true
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 8,
+            "y": 3,
+            "width": 4,
+            "height": 5
+          }
+        },
+        {
+          "widget": {
+            "name": "843a9bd3",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "5f6b2cea",
+                  "fields": [
+                    {
+                      "name": "countdistinct(channel_name)",
+                      "expression": "COUNT(DISTINCT `channel_name`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Channels",
+                "showTitle": true
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(channel_name)",
+                  "displayName": "Channels"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 0,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "4cf15561",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "6066d41b",
+                  "fields": [
+                    {
+                      "name": "countdistinct(id)",
+                      "expression": "COUNT(DISTINCT `id`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Users",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "countdistinct(id)",
+                  "displayName": "Conversation Count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 2,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "885d5f31",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "abca589d",
+                  "fields": [
+                    {
+                      "name": "ts_new",
+                      "expression": "`ts_new`"
+                    },
+                    {
+                      "name": "sum(msg_count)",
+                      "expression": "SUM(`msg_count`)"
+                    }
+                  ],
+                  "disaggregated": false
+                }
+              }
+            ],
+            "spec": {
+              "version": 3,
+              "widgetType": "line",
+              "encodings": {
+                "x": {
+                  "fieldName": "ts_new",
+                  "axis": {
+                    "hideTitle": false,
+                    "hideLabels": true,
+                    "title": "Timeline"
+                  },
+                  "scale": {
+                    "type": "categorical"
+                  }
+                },
+                "y": {
+                  "fieldName": "sum(msg_count)",
+                  "displayName": "Messages Created",
+                  "scale": {
+                    "type": "quantitative"
+                  }
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 6,
+            "y": 1,
+            "width": 6,
+            "height": 2
+          }
+        },
+        {
+          "widget": {
+            "name": "a324918d",
+            "queries": [
+              {
+                "name": "main_query",
+                "query": {
+                  "datasetName": "abca589d",
+                  "fields": [
+                    {
+                      "name": "total_msg",
+                      "expression": "`total_msg`"
+                    }
+                  ],
+                  "disaggregated": true
+                }
+              }
+            ],
+            "spec": {
+              "version": 2,
+              "frame": {
+                "title": "Messages",
+                "showTitle": true,
+                "showDescription": false
+              },
+              "widgetType": "counter",
+              "encodings": {
+                "value": {
+                  "fieldName": "total_msg",
+                  "displayName": "Conversation Count"
+                }
+              }
+            }
+          },
+          "position": {
+            "x": 4,
+            "y": 1,
+            "width": 2,
+            "height": 2
+          }
+        }
+      ],
+      "pageType": "PAGE_TYPE_CANVAS",
+      "layoutVersion": "GRID_V1"
+    },
+    {
+      "name": "ff683c99",
+      "displayName": "Global Filters",
+      "pageType": "PAGE_TYPE_GLOBAL_FILTERS",
+      "layoutVersion": "GRID_V1"
+    }
+  ],
+  "uiSettings": {
+    "theme": {
+      "canvasBackgroundColor": {
+        "light": "#FAFAFB",
+        "dark": "#1F272D"
+      },
+      "widgetBackgroundColor": {
+        "light": "#FFFFFF",
+        "dark": "#11171C"
+      },
+      "fontColor": {
+        "light": "#11171C",
+        "dark": "#E8ECF0"
+      },
+      "selectionColor": {
+        "light": "#2272B4",
+        "dark": "#8ACAFF"
+      },
+      "visualizationColors": [
+        "#077A9D",
+        "#FFAB00",
+        "#00A972",
+        "#FF3621",
+        "#8BCAE7",
+        "#AB4057",
+        "#99DDB4",
+        "#FCA4A1",
+        "#919191",
+        "#BF7080"
+      ],
+      "widgetHeaderAlignment": "LEFT"
+    },
+    "applyModeEnabled": false
+  }
+}
